@@ -1,23 +1,32 @@
-# Build
-FROM golang:alpine as builder
-
+# Builder stage
+FROM golang:1.21-alpine AS builder
 LABEL stage=gobuilder
+
 RUN apk update --no-cache && apk add --no-cache tzdata
 
-WORKDIR /build
+WORKDIR /app
 
-ADD go.mod .
-ADD go.sum .
+# Copy mod files first for caching
+COPY go.mod go.sum ./
 RUN go mod download
 
+# Copy the rest of the source
 COPY . .
-RUN go build -o /app/openserp .
 
+# Build the binary
+RUN go build -o openserp .
 
+# Final stage
 FROM zenika/alpine-chrome:with-chromedriver
 
+WORKDIR /usr/src/app
+
+# Copy config and binary
+COPY config.yaml .
 COPY --from=builder /app/openserp /usr/local/bin/openserp
-ADD config.yaml /usr/src/app
 
-ENTRYPOINT ["openserp"]
+# Expose port if needed (Railway sets PORT env)
+EXPOSE 8080
 
+# Start the server
+ENTRYPOINT ["openserp", "serve"]
