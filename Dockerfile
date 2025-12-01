@@ -1,5 +1,5 @@
 # Builder stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.26-alpine AS builder
 LABEL stage=gobuilder
 
 RUN apk update --no-cache && apk add --no-cache tzdata
